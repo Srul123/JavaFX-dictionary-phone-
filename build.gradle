@@ -1,0 +1,38 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
+}
+
+group 'ex2'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = '14'
+targetCompatibility = '14'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+application {
+    mainModule = 'ex2.maman14_ex2'
+    mainClass = 'ex2.maman14_ex2.HelloApplication'
+}
+
+javafx {
+    version = '14.0.2.1'
+    modules = ['javafx.controls', 'javafx.fxml']
+}
+
+dependencies {
+
+    testImplementation('org.testng:testng:7.4.0')
+}
+
+test {
+    useTestNG()
+}
