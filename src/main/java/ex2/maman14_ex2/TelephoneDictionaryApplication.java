@@ -57,21 +57,22 @@ public class TelephoneDictionaryApplication extends Application {
 
         Button addButton = new Button("Add");
         addButton.setOnAction((ActionEvent e) -> {
-            if (nameTxt.getText() == "" || phoneTxt.getText() == "") {
-                Dialog d = new Alert(Alert.AlertType.ERROR, "Please insert fields");
+            String[] message = new String[1];
+            if (!validateFieldsInputs(nameTxt, phoneTxt, message) || !validateInputIsNotAlreadyExist(nameTxt, phoneTxt, message)) {
+                Dialog d = new Alert(Alert.AlertType.ERROR, "Please fix: " + message[0]);
                 d.show();
                 return;
             }
             getDictionaryList.add(new TelephoneDictionaryModel(nameTxt.getText(), phoneTxt.getText()));
             nameTxt.clear();
             phoneTxt.clear();
-            selectedIndex = -1;
         });
 
         Button updateButton = new Button("Update");
         updateButton.setOnAction((ActionEvent e) -> {
-            if (nameTxt.getText() == "" || phoneTxt.getText() == "") {
-                Dialog d = new Alert(Alert.AlertType.ERROR, "Please update fields");
+            String[] message = new String[1];
+            if (!validateFieldsInputs(nameTxt, phoneTxt, message)) {
+                Dialog d = new Alert(Alert.AlertType.ERROR, "Please fix: " + message[0]);
                 d.show();
                 return;
             }
@@ -81,7 +82,6 @@ public class TelephoneDictionaryApplication extends Application {
             getDictionaryList.add(selectedIndex, new TelephoneDictionaryModel(nameTxt.getText(), phoneTxt.getText()));
             nameTxt.clear();
             phoneTxt.clear();
-            selectedIndex = -1;
         });
 
         Button deleteBtn = new Button("Delete");
@@ -89,7 +89,6 @@ public class TelephoneDictionaryApplication extends Application {
             getDictionaryList.remove(selectedIndex);
             nameTxt.clear();
             phoneTxt.clear();
-            selectedIndex = -1;
         });
 
         Button clearBtn = new Button("Clear");
@@ -100,14 +99,46 @@ public class TelephoneDictionaryApplication extends Application {
             selectedIndex = -1;
         });
 
-        HBox myHBox = new HBox();
-        myHBox.getChildren().addAll(nameTxt, phoneTxt, addButton, updateButton, deleteBtn, clearBtn);
-        myHBox.setSpacing(3);
+        HBox controlPanelCRUD = new HBox();
+        controlPanelCRUD.getChildren().addAll(nameTxt, phoneTxt, addButton, updateButton, deleteBtn, clearBtn);
+        controlPanelCRUD.setSpacing(3);
+
+
+        TextField searchTxt = new TextField();
+        searchTxt.setPromptText("Search by Name");
+
+        Button searchButton = new Button("Search");
+        searchButton.setOnAction((ActionEvent e) -> {
+            if (searchTxt.getText().equals("")) {
+                Dialog d = new Alert(Alert.AlertType.ERROR, "Please insert Name to search for");
+                d.show();
+                return;
+            }
+            ObservableList<TelephoneDictionaryModel> sorted = getDictionaryList.sorted();
+            for (int i = 0; i < getDictionaryList.size(); i++) {
+                if (getDictionaryList.get(i).getName().toLowerCase().contains(searchTxt.getText().toLowerCase())) {
+                    Dialog d = new Alert(Alert.AlertType.INFORMATION,
+                            "Found - Name: " + getDictionaryList.get(i).getName() +
+                                    ", Phone: " + getDictionaryList.get(i).getPhone());
+                    d.show();
+                    searchTxt.clear();
+                    return;
+                }
+            }
+            Dialog d = new Alert(Alert.AlertType.WARNING,
+                    "Not found name: " + searchTxt.getText());
+            d.show();
+            searchTxt.clear();
+        });
+
+        HBox controlPanelSearch = new HBox();
+        controlPanelSearch.getChildren().addAll(searchTxt, searchButton);
+        controlPanelSearch.setSpacing(3);
 
         VBox myVBox = new VBox();
         myVBox.setSpacing(5);
         myVBox.setPadding(new Insets(10, 0, 0, 10));
-        myVBox.getChildren().addAll(nameLabel, myListView, myHBox);
+        myVBox.getChildren().addAll(nameLabel, myListView, controlPanelCRUD, controlPanelSearch);
 
         ((Group) scene.getRoot()).getChildren().addAll(myVBox);
         stage.setScene(scene);
@@ -120,5 +151,32 @@ public class TelephoneDictionaryApplication extends Application {
                     new TelephoneDictionaryModel("Cristiano Ronaldo", "0506803636"),
                     new TelephoneDictionaryModel("Leo Messi", "0506805858")
             );
+
+
+    private boolean validateFieldsInputs(TextField nameTxt, TextField phoneTxt, String[] message) {
+        boolean valid = true;
+        if (nameTxt.getText().equals("") ||
+                phoneTxt.getText().equals("") ||
+                nameTxt.getText().length() < 2 ||
+                !phoneTxt.getText().matches("^[0-9\\-]*$") ||
+                phoneTxt.getText().length() < 9) {
+            message[0] = "Invalid input";
+            valid = false;
+        }
+        return valid;
+    }
+
+    private boolean validateInputIsNotAlreadyExist(TextField nameTxt, TextField phoneTxt, String[] message) {
+        boolean valid = true;
+        for (int i = 0; i < getDictionaryList.size(); i++) {
+            if (getDictionaryList.get(i).getName().toLowerCase().equals(nameTxt.getText().toLowerCase()) ||
+                    getDictionaryList.get(i).getPhone().equals(nameTxt.getText())) {
+                valid = false;
+                message[0] = "Already exist in list";
+                break;
+            }
+        }
+        return valid;
+    }
 
 }
