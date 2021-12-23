@@ -1,26 +1,18 @@
-package ex2.maman14_ex2.business_logic;
+package ex2.maman14_ex2;
 
 
 import javafx.beans.property.SimpleStringProperty;
 
-public class TelephoneDictionaryModel {
-    public SimpleStringProperty name, phone;
+public class TelephoneDictionary {
+    private SimpleStringProperty name, phone;
 
-    public TelephoneDictionaryModel(String name, String phone) {
+    public TelephoneDictionary(String name, String phone) {
         this.name = new SimpleStringProperty(name);
         this.phone = new SimpleStringProperty(phone);
     }
 
     public String getName() {
         return name.get();
-    }
-
-    public SimpleStringProperty nameProperty() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name.set(name);
     }
 
     public String getPhone() {
@@ -31,9 +23,6 @@ public class TelephoneDictionaryModel {
         return phone;
     }
 
-    public void setPhone(String phone) {
-        this.phone.set(phone);
-    }
 
     @Override
     public String toString() {

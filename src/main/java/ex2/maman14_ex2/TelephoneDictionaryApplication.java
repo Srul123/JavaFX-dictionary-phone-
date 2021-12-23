@@ -1,12 +1,9 @@
 package ex2.maman14_ex2;
 
-import ex2.maman14_ex2.business_logic.TelephoneDictionaryModel;
 import javafx.application.Application;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -16,7 +13,14 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-import java.io.IOException;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ *
+ * @author Israel Heiblum
+ */
 
 public class TelephoneDictionaryApplication extends Application {
 
@@ -25,6 +29,7 @@ public class TelephoneDictionaryApplication extends Application {
     }
 
     private int selectedIndex = -1;
+    private final String pathToFile = "src/main/resources/ex2/maman14_ex2/dictionary.csv";
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -46,13 +51,12 @@ public class TelephoneDictionaryApplication extends Application {
         myListView.setItems(getDictionaryList);
 
         myListView.setOnMouseClicked(event -> {
-            String selectedItemName = ((TelephoneDictionaryModel) myListView.getSelectionModel().getSelectedItem()).getName();
+            String selectedItemName = ((TelephoneDictionary) myListView.getSelectionModel().getSelectedItem()).getName();
             selectedIndex = myListView.getSelectionModel().getSelectedIndex();
             nameTxt.setText(selectedItemName);
 
-            String selectedItemPhone = ((TelephoneDictionaryModel) myListView.getSelectionModel().getSelectedItem()).getPhone();
+            String selectedItemPhone = ((TelephoneDictionary) myListView.getSelectionModel().getSelectedItem()).getPhone();
             phoneTxt.setText(selectedItemPhone);
-
         });
 
         Button addButton = new Button("Add");
@@ -63,7 +67,7 @@ public class TelephoneDictionaryApplication extends Application {
                 d.show();
                 return;
             }
-            getDictionaryList.add(new TelephoneDictionaryModel(nameTxt.getText(), phoneTxt.getText()));
+            getDictionaryList.add(new TelephoneDictionary(nameTxt.getText(), phoneTxt.getText()));
             nameTxt.clear();
             phoneTxt.clear();
         });
@@ -79,7 +83,7 @@ public class TelephoneDictionaryApplication extends Application {
             Dialog d = new Alert(Alert.AlertType.INFORMATION, "Updated " + nameTxt.getText());
             d.show();
             getDictionaryList.remove(selectedIndex);
-            getDictionaryList.add(selectedIndex, new TelephoneDictionaryModel(nameTxt.getText(), phoneTxt.getText()));
+            getDictionaryList.add(selectedIndex, new TelephoneDictionary(nameTxt.getText(), phoneTxt.getText()));
             nameTxt.clear();
             phoneTxt.clear();
         });
@@ -91,18 +95,21 @@ public class TelephoneDictionaryApplication extends Application {
             phoneTxt.clear();
         });
 
-        Button clearBtn = new Button("Clear");
+        Button clearBtn = new Button("Save");
         clearBtn.setOnAction((ActionEvent e) -> {
-            getDictionaryList.clear();
-            nameTxt.clear();
-            phoneTxt.clear();
-            selectedIndex = -1;
+            try {
+                writeListToFile();
+                Dialog d = new Alert(Alert.AlertType.INFORMATION, "Saved succeeded");
+                d.show();
+            } catch (IOException ex) {
+                Dialog d = new Alert(Alert.AlertType.ERROR, "Sorry: Can't save to file at this moment");
+                d.show();
+                ex.printStackTrace();
+            }
         });
-
         HBox controlPanelCRUD = new HBox();
         controlPanelCRUD.getChildren().addAll(nameTxt, phoneTxt, addButton, updateButton, deleteBtn, clearBtn);
         controlPanelCRUD.setSpacing(3);
-
 
         TextField searchTxt = new TextField();
         searchTxt.setPromptText("Search by Name");
@@ -114,7 +121,7 @@ public class TelephoneDictionaryApplication extends Application {
                 d.show();
                 return;
             }
-            ObservableList<TelephoneDictionaryModel> sorted = getDictionaryList.sorted();
+            ObservableList<TelephoneDictionary> sorted = getDictionaryList.sorted();
             for (int i = 0; i < getDictionaryList.size(); i++) {
                 if (getDictionaryList.get(i).getName().toLowerCase().contains(searchTxt.getText().toLowerCase())) {
                     Dialog d = new Alert(Alert.AlertType.INFORMATION,
@@ -145,12 +152,17 @@ public class TelephoneDictionaryApplication extends Application {
         stage.show();
     }
 
-    private ObservableList<TelephoneDictionaryModel> getDictionaryList =
-            FXCollections.observableArrayList(
-                    new TelephoneDictionaryModel("Diego Maradona", "0525322167"),
-                    new TelephoneDictionaryModel("Cristiano Ronaldo", "0506803636"),
-                    new TelephoneDictionaryModel("Leo Messi", "0506805858")
+    private ObservableList<TelephoneDictionary> getDictionaryList;
+    {
+        try {
+            getDictionaryList = FXCollections.observableArrayList(
+                    readFromFile()
             );
+        } catch (IOException e) {
+            System.out.println("Can't get list from file error occurred");
+            e.printStackTrace();
+        }
+    }
 
 
     private boolean validateFieldsInputs(TextField nameTxt, TextField phoneTxt, String[] message) {
@@ -177,6 +189,40 @@ public class TelephoneDictionaryApplication extends Application {
             }
         }
         return valid;
+    }
+
+    private List<TelephoneDictionary> readFromFile() throws IOException {
+        File file = new File(pathToFile);
+        List<TelephoneDictionary> dataFile = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                String name = line.split(",")[0];
+                String phone = line.split(",")[1];
+                TelephoneDictionary dictionaryModel = new TelephoneDictionary(name, phone);
+                dataFile.add(dictionaryModel);
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Can't read file error occurred");
+            Dialog d = new Alert(Alert.AlertType.ERROR, "Can't read file error occurred");
+            d.show();
+        }
+        return dataFile;
+    }
+
+    private boolean writeListToFile() throws IOException {
+        try {
+            FileWriter file = new FileWriter(pathToFile);
+            PrintWriter write = new PrintWriter(file);
+            for (TelephoneDictionary model : getDictionaryList) {
+                write.println(model.getName() + ","+model.getPhone());
+            }
+            write.close();
+        } catch (IOException exe) {
+            System.out.println("Cannot create file error occurred");
+            return false;
+        }
+        return true;
     }
 
 }
